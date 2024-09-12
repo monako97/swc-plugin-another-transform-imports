@@ -144,13 +144,13 @@ impl VisitMut for TransformVisitor {
                             for spec in &import_decl.specifiers {
                                 match spec {
                                     ImportSpecifier::Named(ref import_named_spec) => {
-                                        let actural_import_var =
+                                        let actual_import_var =
                                             if let Some(ref import_named_spec_name) =
                                                 import_named_spec.imported
                                             {
                                                 match import_named_spec_name {
                                                     ModuleExportName::Str(s) => {
-                                                        Ident::new(s.value.clone(), s.span.clone())
+                                                        Ident::new(s.value.clone(), s.span.clone(), Default::default())
                                                     }
                                                     ModuleExportName::Ident(ident) => ident.clone(),
                                                 }
@@ -160,7 +160,7 @@ impl VisitMut for TransformVisitor {
 
                                         let transformed_path = transform_import_path(
                                             &config.transform,
-                                            &actural_import_var,
+                                            &actual_import_var,
                                             &import_decl.src,
                                             &config.member_transformers
                                         );
@@ -190,7 +190,7 @@ impl VisitMut for TransformVisitor {
                                         if let Some(ref style_path) = config.style {
                                             let transformed_path = transform_import_path(
                                                 &style_path,
-                                                &actural_import_var,
+                                                &actual_import_var,
                                                 &import_decl.src,
                                                 &config.member_transformers
                                             );
@@ -282,7 +282,7 @@ pub fn process_transform(program: Program, metadata: TransformPluginProgramMetad
 
 #[cfg(test)]
 mod tests {
-    use swc_core::ecma::{transforms::testing::test, parser::{Syntax,EsConfig}};
+    use swc_core::ecma::{transforms::testing::test, parser::{Syntax,EsSyntax}};
     use maplit::hashmap;
     use swc_core::ecma::visit::Fold;
     use super::*;
@@ -294,7 +294,7 @@ mod tests {
     }
 
     fn syntax() -> Syntax {
-        Syntax::Es(EsConfig {
+        Syntax::Es(EsSyntax {
             jsx: true,
             ..Default::default()
         })

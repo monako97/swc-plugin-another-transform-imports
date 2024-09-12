@@ -80,8 +80,7 @@ It is possible that as next.js and swc are updated, the current plugin will fail
 | 14.1.1-canary.52 ~ 15.0.0-canary.28  | 1.4.x             | 0.2.9                                                                                                                                                        |
 | 15.0.0-canary.29 ~ 15.0.0-canary.36  | 1.5.x             | 1.5.0                                                                                                                                                        |
 | 15.0.0-canary.37 ~ 15.0.0-canary.116 | 1.6.x             | 1.6.0                                                                                                                                                        |
-
-
+| 15.0.0-canary.117 ~                  | 1.7.x             | 1.7.0                                                                                                                                                        |
 
 [@swc/core and swc_core version mappings](https://swc.rs/docs/plugin/selecting-swc-core)
 
