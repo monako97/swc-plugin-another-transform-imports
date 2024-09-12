@@ -1,20 +1,6 @@
 [
   {
     "swc_core": {
-      "from": "0.90.x",
-      "to": null
-    },
-    "@swc/core": {
-      "from": "1.4.0",
-      "to": null
-    },
-    "next": {
-      "from": null,
-      "to": null
-    }
-  },
-  {
-    "swc_core": {
       "from": "0.88.x",
       "to": "0.89.x"
     },

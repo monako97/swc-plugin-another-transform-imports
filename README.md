@@ -66,18 +66,19 @@ Since the semantic version association of `@swc/core` (npm) and `swc_core` (rust
 
 It is possible that as next.js and swc are updated, the current plugin will fail in the new version. Hopefully the new plugin api for swc will be stable soon. Here is the current version correspondence.
 
-| next.js versions           | swc_versions      | This package version                                                                                                                                         |
-| -------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 12.3.x                     | -                 | 0.1.5                                                                                                                                                        |
-| 13.0.x                     | -                 | 0.2.1                                                                                                                                                        |
-| 13.2.4 ~ 13.3.1            | -                 | not support [https://github.com/vercel/next.js/issues/46989#issuecomment-1486989081](https://github.com/vercel/next.js/issues/46989#issuecomment-1486989081) |
-| 13.3.1 ~ 13.4.3            | -                 | 0.2.3                                                                                                                                                        |
-| 13.4.3-canary.2 ~ 13.4.7   | 1.3.58 ~ 1.3.62   | 0.2.4                                                                                                                                                        |
-| 13.4.8 ~ v13.4.10-canary.0 | 1.3.63 ~ 1.3.67   | 0.2.5                                                                                                                                                        |
-| 13.4.10-canary.1 ~         | 1.3.68 ~ 1.3.80   | 0.2.6                                                                                                                                                        |
-| ~ 14.1.0                   | 1.3.81 ~ 1.3.105  | 0.2.7                                                                                                                                                        |
-| -                          | 1.3.106 ~ 1.3.107 | 0.2.8                                                                                                                                                        |
-| -                          | 1.4.0 ~           | 0.2.9                                                                                                                                                        |
+| next.js versions                    | swc_versions      | This package version                                                                                                                                         |
+|-------------------------------------|-------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 12.3.x                              | -                 | 0.1.5                                                                                                                                                        |
+| 13.0.x                              | -                 | 0.2.1                                                                                                                                                        |
+| 13.2.4 ~ 13.3.1                     | -                 | not support [https://github.com/vercel/next.js/issues/46989#issuecomment-1486989081](https://github.com/vercel/next.js/issues/46989#issuecomment-1486989081) |
+| 13.3.1 ~ 13.4.3                     | -                 | 0.2.3                                                                                                                                                        |
+| 13.4.3-canary.2 ~ 13.4.7            | 1.3.58 ~ 1.3.62   | 0.2.4                                                                                                                                                        |
+| 13.4.8 ~ v13.4.10-canary.0          | 1.3.63 ~ 1.3.67   | 0.2.5                                                                                                                                                        |
+| 13.4.10-canary.1 ~                  | 1.3.68 ~ 1.3.80   | 0.2.6                                                                                                                                                        |
+| ~ 14.1.0                            | 1.3.81 ~ 1.3.105  | 0.2.7                                                                                                                                                        |
+| -                                   | 1.3.106 ~ 1.3.107 | 0.2.8                                                                                                                                                        |
+| 14.1.1-canary.52 ~ 15.0.0-canary.28 | 1.4.x             | 0.2.9                                                                                                                                                        |
+| 15.0.0-canary.29 ~ 15.0.0-canary.36 | 1.5.x             | 1.5.0                                                                                                                                                        |
 
 [@swc/core and swc_core version mappings](https://swc.rs/docs/plugin/selecting-swc-core)
 
@@ -90,7 +91,7 @@ If you use antd and next.js at the same time, it will be a bit troublesome to wo
 ## Options
 
 | Name                    | Type                       | Required | Default     | Description                                                                                                                                     |
-| ----------------------- | -------------------------- | -------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+|-------------------------|----------------------------|----------|-------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
 | `transform`             | `string`                   | yes      | `undefined` | The library name to use instead of the one specified in the import statement. ${member} will be replaced with the member, aka Grid/Row/Col/etc. |
 | `preventFullImport`     | `boolean`                  | no       | `true`      | Whether or not to throw when an import is encountered which would cause the entire module to be imported.                                       |
 | `skipDefaultConversion` | `boolean`                  | no       | `false`     | When set to true, will preserve `import { X }` syntax instead of converting to `import X`.                                                      |
