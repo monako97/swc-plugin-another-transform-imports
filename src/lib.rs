@@ -282,7 +282,7 @@ pub fn process_transform(program: Program, metadata: TransformPluginProgramMetad
 
 #[cfg(test)]
 mod tests {
-    use swc_core::ecma::{transforms::testing::test, parser::{Syntax,EsSyntax}};
+    use swc_core::ecma::{transforms::testing::test_inline, parser::{Syntax,EsSyntax}};
     use maplit::hashmap;
     use swc_core::ecma::visit::Fold;
     use super::*;
@@ -300,7 +300,7 @@ mod tests {
         })
     }
 
-    test!(
+    test_inline!(
         syntax(),
         |_| transform_visitor(hashmap!{
             "antd".to_string() => TransformVisitorSubConfig {
@@ -317,7 +317,7 @@ mod tests {
     );
 
 
-    test!(
+    test_inline!(
         syntax(),
         |_| transform_visitor(hashmap!{
             "antd".to_string() => TransformVisitorSubConfig {
@@ -333,7 +333,7 @@ mod tests {
         r#"import NewButton from "antd/es/my-button";import "antd/es/my-button/style";"#
     );
 
-    test!(
+    test_inline!(
         syntax(),
         |_| transform_visitor(hashmap!{
             "antd".to_string() => TransformVisitorSubConfig {
@@ -349,7 +349,7 @@ mod tests {
         r#"import {MyButton as NewButton} from "abc";"#
     );
 
-    test!(
+    test_inline!(
         syntax(),
         |_| {
             let configs_str = r#"
