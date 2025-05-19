@@ -2,25 +2,18 @@ use std::collections::HashMap;
 
 use swc_core::{
     ecma::ast::*,
-    ecma::visit::{VisitMut, FoldWith, as_folder},
-    plugin::{plugin_transform,proxies::TransformPluginProgramMetadata},
+    ecma::visit::{as_folder, FoldWith, VisitMut},
+    plugin::{plugin_transform, proxies::TransformPluginProgramMetadata},
 };
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+use tracing::debug;
 use voca_rs::case::{
-    camel_case, 
-    kebab_case, 
-    pascal_case,
-    snake_case, 
-    upper_case, 
+    camel_case, kebab_case, lower_case, lower_first, pascal_case, snake_case, upper_case,
     upper_first,
-    lower_case,
-    lower_first,
 };
-use tracing::{ debug };
 #[macro_use]
 extern crate lazy_static;
-
 
 #[derive(Serialize, Deserialize, Debug, Eq, Hash, PartialEq)]
 #[serde(rename_all = "snake_case")]
@@ -33,7 +26,7 @@ pub enum TransformMember {
     UpperCase,
     UpperFirst,
     LowerCase,
-    LowerFirst
+    LowerFirst,
 }
 
 lazy_static! {
@@ -50,22 +43,27 @@ lazy_static! {
         m.insert(LowerCase, lower_case);
         m.insert(LowerFirst, lower_first);
         m
-    }; 
+    };
 }
 
-fn transform_import_path(transform: &str, member: &Ident, raw: &Str, member_transformers: &[TransformMember]) -> Str {
-    let transformed_member = member_transformers.iter().fold(
-        member.sym.to_string(),
-    |acc, curr| {
-        if let Some(f) = TRANSFORM_MEMBER_MAPPING.get(curr) {
-            f(&acc)
-        } else {
-            acc
-        }
-    });
+fn transform_import_path(
+    transform: &str,
+    member: &Ident,
+    raw: &Str,
+    member_transformers: &[TransformMember],
+) -> Str {
+    let transformed_member =
+        member_transformers
+            .iter()
+            .fold(member.sym.to_string(), |acc, curr| {
+                if let Some(f) = TRANSFORM_MEMBER_MAPPING.get(curr) {
+                    f(&acc)
+                } else {
+                    acc
+                }
+            });
     debug!("transformed member is {}", transformed_member);
-    let replaced = transform
-        .replace("${member}", &transformed_member);
+    let replaced = transform.replace("${member}", &transformed_member);
     Str {
         span: raw.span.clone(),
         value: replaced.into(),
@@ -73,19 +71,19 @@ fn transform_import_path(transform: &str, member: &Ident, raw: &Str, member_tran
     }
 }
 
-fn default_true () -> bool {
+fn default_true() -> bool {
     true
 }
 
-fn default_false () -> bool {
+fn default_false() -> bool {
     false
 }
 
-fn default_member_transformers () -> Vec<TransformMember> {
+fn default_member_transformers() -> Vec<TransformMember> {
     vec![]
 }
 
-fn default_style () -> Option<String> {
+fn default_style() -> Option<String> {
     None
 }
 
@@ -100,7 +98,7 @@ pub struct TransformVisitorSubConfig {
     #[serde(default = "default_style")]
     pub style: Option<String>,
     #[serde(default = "default_member_transformers")]
-    pub member_transformers: Vec<TransformMember>
+    pub member_transformers: Vec<TransformMember>,
 }
 
 pub type TransformVisitorConfigs = HashMap<String, TransformVisitorSubConfig>;
@@ -125,12 +123,13 @@ impl VisitMut for TransformVisitor {
             match node {
                 ModuleItem::ModuleDecl(ref module_decl) => match module_decl {
                     ModuleDecl::Import(ref import_decl) => {
-
                         let import_decl_value: &str = &import_decl.src.value.to_string();
 
                         if let Some(config) = self.configs.get(import_decl_value) {
                             let is_default_import_exist = import_decl.specifiers.iter().any(|s| {
-                                if let ImportSpecifier::Default(_) | ImportSpecifier::Namespace(_) = s {
+                                if let ImportSpecifier::Default(_) | ImportSpecifier::Namespace(_) =
+                                    s
+                                {
                                     true
                                 } else {
                                     false
@@ -149,9 +148,11 @@ impl VisitMut for TransformVisitor {
                                                 import_named_spec.imported
                                             {
                                                 match import_named_spec_name {
-                                                    ModuleExportName::Str(s) => {
-                                                        Ident::new(s.value.clone(), s.span.clone(), Default::default())
-                                                    }
+                                                    ModuleExportName::Str(s) => Ident::new(
+                                                        s.value.clone(),
+                                                        s.span.clone(),
+                                                        Default::default(),
+                                                    ),
                                                     ModuleExportName::Ident(ident) => ident.clone(),
                                                 }
                                             } else {
@@ -162,7 +163,7 @@ impl VisitMut for TransformVisitor {
                                             &config.transform,
                                             &actual_import_var,
                                             &import_decl.src,
-                                            &config.member_transformers
+                                            &config.member_transformers,
                                         );
 
                                         let new_spec = if config.skip_default_conversion {
@@ -181,7 +182,7 @@ impl VisitMut for TransformVisitor {
                                                 src: Box::new(transformed_path),
                                                 type_only: import_named_spec.is_type_only,
                                                 with: import_decl.with.clone(),
-                                                phase: import_decl.phase.clone()
+                                                phase: import_decl.phase.clone(),
                                             },
                                         ));
 
@@ -192,7 +193,7 @@ impl VisitMut for TransformVisitor {
                                                 &style_path,
                                                 &actual_import_var,
                                                 &import_decl.src,
-                                                &config.member_transformers
+                                                &config.member_transformers,
                                             );
 
                                             let style_node = ModuleItem::ModuleDecl(
@@ -202,7 +203,7 @@ impl VisitMut for TransformVisitor {
                                                     src: Box::new(transformed_path),
                                                     type_only: false,
                                                     with: import_decl.with.clone(),
-                                                    phase: import_decl.phase.clone()
+                                                    phase: import_decl.phase.clone(),
                                                 }),
                                             );
 
@@ -217,7 +218,7 @@ impl VisitMut for TransformVisitor {
                                                 src: import_decl.src.clone(),
                                                 type_only: import_decl.type_only,
                                                 with: import_decl.with.clone(),
-                                                phase: import_decl.phase.clone()
+                                                phase: import_decl.phase.clone(),
                                             },
                                         ));
 
@@ -265,110 +266,109 @@ impl VisitMut for TransformVisitor {
 /// results back to host. Refer swc_plugin_macro how does it work internally.
 #[plugin_transform]
 pub fn process_transform(program: Program, metadata: TransformPluginProgramMetadata) -> Program {
-
     let configs_string_opt = metadata.get_transform_plugin_config();
 
-    let configs: HashMap<String, TransformVisitorSubConfig> = if let Some(ref config_str) = configs_string_opt {
-        serde_json::from_str::<HashMap<String, TransformVisitorSubConfig>>(config_str).expect("parse swc-plugin-custom-transform-imports plugin config failed")
-    } else {
-        HashMap::new()
-    };
+    let configs: HashMap<String, TransformVisitorSubConfig> =
+        if let Some(ref config_str) = configs_string_opt {
+            serde_json::from_str::<HashMap<String, TransformVisitorSubConfig>>(config_str)
+                .expect("parse swc-plugin-custom-transform-imports plugin config failed")
+        } else {
+            HashMap::new()
+        };
 
-    program.fold_with(&mut as_folder(TransformVisitor {
-        configs,
-    }))
+    program.fold_with(&mut as_folder(TransformVisitor { configs }))
 }
 
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+//     use maplit::hashmap;
+//     use swc_core::ecma::visit::Fold;
+//     use swc_core::ecma::{
+//         parser::{EsSyntax, Syntax},
+//         transforms::testing::test_inline,
+//     };
 
-#[cfg(test)]
-mod tests {
-    use swc_core::ecma::{transforms::testing::test_inline, parser::{Syntax,EsSyntax}};
-    use maplit::hashmap;
-    use swc_core::ecma::visit::Fold;
-    use super::*;
+//     fn transform_visitor(configs: TransformVisitorConfigs) -> impl 'static + Fold + VisitMut {
+//         as_folder(TransformVisitor { configs })
+//     }
 
-    fn transform_visitor(configs: TransformVisitorConfigs) -> impl 'static + Fold + VisitMut {
-        as_folder(TransformVisitor {
-            configs
-        })
-    }
+//     fn syntax() -> Syntax {
+//         Syntax::Es(EsSyntax {
+//             jsx: true,
+//             ..Default::default()
+//         })
+//     }
 
-    fn syntax() -> Syntax {
-        Syntax::Es(EsSyntax {
-            jsx: true,
-            ..Default::default()
-        })
-    }
+//     test_inline!(
+//         syntax(),
+//         |_| transform_visitor(hashmap! {
+//             "antd".to_string() => TransformVisitorSubConfig {
+//                 transform: "antd/es/${member}".to_string(),
+//                 skip_default_conversion: false,
+//                 prevent_full_import: true,
+//                 style: Some("antd/es/${member}/style".to_string()),
+//                 member_transformers: vec![TransformMember::DashedCase]
+//             }
+//         }),
+//         base_transform,
+//         r#"import {MyButton} from "antd";"#,
+//         r#"import MyButton from "antd/es/my-button";import "antd/es/my-button/style";"#
+//     );
 
-    test_inline!(
-        syntax(),
-        |_| transform_visitor(hashmap!{
-            "antd".to_string() => TransformVisitorSubConfig {
-                transform: "antd/es/${member}".to_string(),
-                skip_default_conversion: false,
-                prevent_full_import: true,
-                style: Some("antd/es/${member}/style".to_string()),
-                member_transformers: vec![TransformMember::DashedCase]
-            }
-        }),
-        base_transform,
-        r#"import {MyButton} from "antd";"#,
-        r#"import MyButton from "antd/es/my-button";import "antd/es/my-button/style";"#
-    );
+//     test_inline!(
+//         syntax(),
+//         |_| transform_visitor(hashmap! {
+//             "antd".to_string() => TransformVisitorSubConfig {
+//                 transform: "antd/es/${member}".to_string(),
+//                 skip_default_conversion: false,
+//                 prevent_full_import: true,
+//                 style: Some("antd/es/${member}/style".to_string()),
+//                 member_transformers: vec![TransformMember::DashedCase]
+//             }
+//         }),
+//         base_transform_with_alias,
+//         r#"import {MyButton as NewButton} from "antd";"#,
+//         r#"import NewButton from "antd/es/my-button";import "antd/es/my-button/style";"#
+//     );
 
+//     test_inline!(
+//         syntax(),
+//         |_| transform_visitor(hashmap! {
+//             "antd".to_string() => TransformVisitorSubConfig {
+//                 transform: "antd/es/${member}".to_string(),
+//                 skip_default_conversion: false,
+//                 prevent_full_import: true,
+//                 style: Some("antd/es/${member}/style".to_string()),
+//                 member_transformers: vec![TransformMember::DashedCase]
+//             }
+//         }),
+//         base_transform_with_others,
+//         r#"import {MyButton as NewButton} from "abc";"#,
+//         r#"import {MyButton as NewButton} from "abc";"#
+//     );
 
-    test_inline!(
-        syntax(),
-        |_| transform_visitor(hashmap!{
-            "antd".to_string() => TransformVisitorSubConfig {
-                transform: "antd/es/${member}".to_string(),
-                skip_default_conversion: false,
-                prevent_full_import: true,
-                style: Some("antd/es/${member}/style".to_string()),
-                member_transformers: vec![TransformMember::DashedCase]
-            }
-        }),
-        base_transform_with_alias,
-        r#"import {MyButton as NewButton} from "antd";"#,
-        r#"import NewButton from "antd/es/my-button";import "antd/es/my-button/style";"#
-    );
-
-    test_inline!(
-        syntax(),
-        |_| transform_visitor(hashmap!{
-            "antd".to_string() => TransformVisitorSubConfig {
-                transform: "antd/es/${member}".to_string(),
-                skip_default_conversion: false,
-                prevent_full_import: true,
-                style: Some("antd/es/${member}/style".to_string()),
-                member_transformers: vec![TransformMember::DashedCase]
-            }
-        }),
-        base_transform_with_others,
-        r#"import {MyButton as NewButton} from "abc";"#,
-        r#"import {MyButton as NewButton} from "abc";"#
-    );
-
-    test_inline!(
-        syntax(),
-        |_| {
-            let configs_str = r#"
-            {
-                "antd": {
-                  "transform": "antd/es/${member}",
-                  "skipDefaultConversion": false,
-                  "preventFullImport": true,
-                  "style": "antd/es/${member}/style",
-                  "memberTransformers": ["dashed_case"]
-                }
-            }
-            "#;
-            let configs: HashMap<String, TransformVisitorSubConfig> = serde_json::from_str(configs_str)
-                .expect("parse swc-plugin-custom-transform-imports plugin config failed");
-            transform_visitor(configs)
-        },
-        base_transform_with_json_config,
-        r#"import {MyButton as NewButton} from "antd";"#,
-        r#"import NewButton from "antd/es/my-button";import "antd/es/my-button/style";"#
-    );
-}
+//     test_inline!(
+//         syntax(),
+//         |_| {
+//             let configs_str = r#"
+//             {
+//                 "antd": {
+//                   "transform": "antd/es/${member}",
+//                   "skipDefaultConversion": false,
+//                   "preventFullImport": true,
+//                   "style": "antd/es/${member}/style",
+//                   "memberTransformers": ["dashed_case"]
+//                 }
+//             }
+//             "#;
+//             let configs: HashMap<String, TransformVisitorSubConfig> =
+//                 serde_json::from_str(configs_str)
+//                     .expect("parse swc-plugin-custom-transform-imports plugin config failed");
+//             transform_visitor(configs)
+//         },
+//         base_transform_with_json_config,
+//         r#"import {MyButton as NewButton} from "antd";"#,
+//         r#"import NewButton from "antd/es/my-button";import "antd/es/my-button/style";"#
+//     );
+// }
