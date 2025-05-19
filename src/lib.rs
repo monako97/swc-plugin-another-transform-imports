@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 
 use swc_core::{
-    ecma::ast::*,
-    ecma::visit::{as_folder, FoldWith, VisitMut},
+    ecma::{
+        ast::*,
+        visit::{visit_mut_pass, VisitMut},
+    },
     plugin::{plugin_transform, proxies::TransformPluginProgramMetadata},
 };
 
@@ -245,27 +247,11 @@ impl VisitMut for TransformVisitor {
     }
 }
 
-/// An example plugin function with macro support.
-/// `plugin_transform` macro interop pointers into deserialized structs, as well
-/// as returning ptr back to host.
-///
-/// It is possible to opt out from macro by writing transform fn manually via
-/// `__transform_plugin_process_impl(
-///     ast_ptr: *const u8,
-///     ast_ptr_len: i32,
-///     config_str_ptr: *const u8,
-///     config_str_ptr_len: i32,
-///     context_str_ptr: *const u8,
-///     context_str_ptr_len: i32) ->
-///     i32 /*  0 for success, fail otherwise.
-///             Note this is only for internal pointer interop result,
-///             not actual transform result */
-///
-/// if plugin need to handle low-level ptr directly. However, there are
-/// important steps manually need to be performed like sending transformed
-/// results back to host. Refer swc_plugin_macro how does it work internally.
 #[plugin_transform]
-pub fn process_transform(program: Program, metadata: TransformPluginProgramMetadata) -> Program {
+pub fn process_transform(
+    mut program: Program,
+    metadata: TransformPluginProgramMetadata,
+) -> Program {
     let configs_string_opt = metadata.get_transform_plugin_config();
 
     let configs: HashMap<String, TransformVisitorSubConfig> =
@@ -276,99 +262,100 @@ pub fn process_transform(program: Program, metadata: TransformPluginProgramMetad
             HashMap::new()
         };
 
-    program.fold_with(&mut as_folder(TransformVisitor { configs }))
+    program.mutate(visit_mut_pass(TransformVisitor { configs }));
+    program
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use maplit::hashmap;
-//     use swc_core::ecma::visit::Fold;
-//     use swc_core::ecma::{
-//         parser::{EsSyntax, Syntax},
-//         transforms::testing::test_inline,
-//     };
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use maplit::hashmap;
+    use swc_core::ecma::{
+        ast::Pass,
+        parser::{EsSyntax, Syntax},
+        transforms::testing::test_inline,
+    };
 
-//     fn transform_visitor(configs: TransformVisitorConfigs) -> impl 'static + Fold + VisitMut {
-//         as_folder(TransformVisitor { configs })
-//     }
+    fn transform_visitor(configs: TransformVisitorConfigs) -> impl 'static + Pass + VisitMut {
+        visit_mut_pass(TransformVisitor { configs })
+    }
 
-//     fn syntax() -> Syntax {
-//         Syntax::Es(EsSyntax {
-//             jsx: true,
-//             ..Default::default()
-//         })
-//     }
+    fn syntax() -> Syntax {
+        Syntax::Es(EsSyntax {
+            jsx: true,
+            ..Default::default()
+        })
+    }
 
-//     test_inline!(
-//         syntax(),
-//         |_| transform_visitor(hashmap! {
-//             "antd".to_string() => TransformVisitorSubConfig {
-//                 transform: "antd/es/${member}".to_string(),
-//                 skip_default_conversion: false,
-//                 prevent_full_import: true,
-//                 style: Some("antd/es/${member}/style".to_string()),
-//                 member_transformers: vec![TransformMember::DashedCase]
-//             }
-//         }),
-//         base_transform,
-//         r#"import {MyButton} from "antd";"#,
-//         r#"import MyButton from "antd/es/my-button";import "antd/es/my-button/style";"#
-//     );
+    test_inline!(
+        syntax(),
+        |_| transform_visitor(hashmap! {
+            "antd".to_string() => TransformVisitorSubConfig {
+                transform: "antd/es/${member}".to_string(),
+                skip_default_conversion: false,
+                prevent_full_import: true,
+                style: Some("antd/es/${member}/style".to_string()),
+                member_transformers: vec![TransformMember::DashedCase]
+            }
+        }),
+        base_transform,
+        r#"import {MyButton} from "antd";"#,
+        r#"import MyButton from "antd/es/my-button";import "antd/es/my-button/style";"#
+    );
 
-//     test_inline!(
-//         syntax(),
-//         |_| transform_visitor(hashmap! {
-//             "antd".to_string() => TransformVisitorSubConfig {
-//                 transform: "antd/es/${member}".to_string(),
-//                 skip_default_conversion: false,
-//                 prevent_full_import: true,
-//                 style: Some("antd/es/${member}/style".to_string()),
-//                 member_transformers: vec![TransformMember::DashedCase]
-//             }
-//         }),
-//         base_transform_with_alias,
-//         r#"import {MyButton as NewButton} from "antd";"#,
-//         r#"import NewButton from "antd/es/my-button";import "antd/es/my-button/style";"#
-//     );
+    test_inline!(
+        syntax(),
+        |_| transform_visitor(hashmap! {
+            "antd".to_string() => TransformVisitorSubConfig {
+                transform: "antd/es/${member}".to_string(),
+                skip_default_conversion: false,
+                prevent_full_import: true,
+                style: Some("antd/es/${member}/style".to_string()),
+                member_transformers: vec![TransformMember::DashedCase]
+            }
+        }),
+        base_transform_with_alias,
+        r#"import {MyButton as NewButton} from "antd";"#,
+        r#"import NewButton from "antd/es/my-button";import "antd/es/my-button/style";"#
+    );
 
-//     test_inline!(
-//         syntax(),
-//         |_| transform_visitor(hashmap! {
-//             "antd".to_string() => TransformVisitorSubConfig {
-//                 transform: "antd/es/${member}".to_string(),
-//                 skip_default_conversion: false,
-//                 prevent_full_import: true,
-//                 style: Some("antd/es/${member}/style".to_string()),
-//                 member_transformers: vec![TransformMember::DashedCase]
-//             }
-//         }),
-//         base_transform_with_others,
-//         r#"import {MyButton as NewButton} from "abc";"#,
-//         r#"import {MyButton as NewButton} from "abc";"#
-//     );
+    test_inline!(
+        syntax(),
+        |_| transform_visitor(hashmap! {
+            "antd".to_string() => TransformVisitorSubConfig {
+                transform: "antd/es/${member}".to_string(),
+                skip_default_conversion: false,
+                prevent_full_import: true,
+                style: Some("antd/es/${member}/style".to_string()),
+                member_transformers: vec![TransformMember::DashedCase]
+            }
+        }),
+        base_transform_with_others,
+        r#"import {MyButton as NewButton} from "abc";"#,
+        r#"import {MyButton as NewButton} from "abc";"#
+    );
 
-//     test_inline!(
-//         syntax(),
-//         |_| {
-//             let configs_str = r#"
-//             {
-//                 "antd": {
-//                   "transform": "antd/es/${member}",
-//                   "skipDefaultConversion": false,
-//                   "preventFullImport": true,
-//                   "style": "antd/es/${member}/style",
-//                   "memberTransformers": ["dashed_case"]
-//                 }
-//             }
-//             "#;
-//             let configs: HashMap<String, TransformVisitorSubConfig> =
-//                 serde_json::from_str(configs_str)
-//                     .expect("parse swc-plugin-custom-transform-imports plugin config failed");
-//             transform_visitor(configs)
-//         },
-//         base_transform_with_json_config,
-//         r#"import {MyButton as NewButton} from "antd";"#,
-//         r#"import NewButton from "antd/es/my-button";import "antd/es/my-button/style";"#
-//     );
-// }
+    test_inline!(
+        syntax(),
+        |_| {
+            let configs_str = r#"
+            {
+                "antd": {
+                  "transform": "antd/es/${member}",
+                  "skipDefaultConversion": false,
+                  "preventFullImport": true,
+                  "style": "antd/es/${member}/style",
+                  "memberTransformers": ["dashed_case"]
+                }
+            }
+            "#;
+            let configs: HashMap<String, TransformVisitorSubConfig> =
+                serde_json::from_str(configs_str)
+                    .expect("parse swc-plugin-custom-transform-imports plugin config failed");
+            transform_visitor(configs)
+        },
+        base_transform_with_json_config,
+        r#"import {MyButton as NewButton} from "antd";"#,
+        r#"import NewButton from "antd/es/my-button";import "antd/es/my-button/style";"#
+    );
+}
