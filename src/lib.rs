@@ -67,7 +67,7 @@ fn transform_import_path(
     debug!("transformed member is {}", transformed_member);
     let replaced = transform.replace("${member}", &transformed_member);
     Str {
-        span: raw.span.clone(),
+        span: raw.span,
         value: replaced.into(),
         raw: None,
     }
@@ -125,21 +125,18 @@ impl VisitMut for TransformVisitor {
             match node {
                 ModuleItem::ModuleDecl(ref module_decl) => match module_decl {
                     ModuleDecl::Import(ref import_decl) => {
-                        let import_decl_value: &str = &import_decl.src.value.to_string();
+                        let import_decl_value: &str = import_decl.src.value.as_ref();
 
                         if let Some(config) = self.configs.get(import_decl_value) {
                             let is_default_import_exist = import_decl.specifiers.iter().any(|s| {
-                                if let ImportSpecifier::Default(_) | ImportSpecifier::Namespace(_) =
-                                    s
-                                {
-                                    true
-                                } else {
-                                    false
-                                }
+                                matches!(
+                                    s,
+                                    ImportSpecifier::Default(_) | ImportSpecifier::Namespace(_)
+                                )
                             });
 
                             if is_default_import_exist && config.prevent_full_import {
-                                panic!("Import of entire module '{}' not allowed due to preventFullImport setting", import_decl_value);
+                                panic!("Import of entire module '{import_decl_value}' not allowed due to preventFullImport setting");
                             }
 
                             for spec in &import_decl.specifiers {
@@ -152,7 +149,7 @@ impl VisitMut for TransformVisitor {
                                                 match import_named_spec_name {
                                                     ModuleExportName::Str(s) => Ident::new(
                                                         s.value.clone(),
-                                                        s.span.clone(),
+                                                        s.span,
                                                         Default::default(),
                                                     ),
                                                     ModuleExportName::Ident(ident) => ident.clone(),
@@ -172,19 +169,19 @@ impl VisitMut for TransformVisitor {
                                             spec.clone()
                                         } else {
                                             ImportSpecifier::Default(ImportDefaultSpecifier {
-                                                span: import_named_spec.span.clone(),
+                                                span: import_named_spec.span,
                                                 local: import_named_spec.local.clone(),
                                             })
                                         };
 
                                         let new_node = ModuleItem::ModuleDecl(ModuleDecl::Import(
                                             ImportDecl {
-                                                span: import_decl.span.clone(),
+                                                span: import_decl.span,
                                                 specifiers: vec![new_spec],
                                                 src: Box::new(transformed_path),
                                                 type_only: import_named_spec.is_type_only,
                                                 with: import_decl.with.clone(),
-                                                phase: import_decl.phase.clone(),
+                                                phase: import_decl.phase,
                                             },
                                         ));
 
@@ -192,7 +189,7 @@ impl VisitMut for TransformVisitor {
 
                                         if let Some(ref style_path) = config.style {
                                             let transformed_path = transform_import_path(
-                                                &style_path,
+                                                style_path,
                                                 &actual_import_var,
                                                 &import_decl.src,
                                                 &config.member_transformers,
@@ -200,12 +197,12 @@ impl VisitMut for TransformVisitor {
 
                                             let style_node = ModuleItem::ModuleDecl(
                                                 ModuleDecl::Import(ImportDecl {
-                                                    span: import_decl.span.clone(),
+                                                    span: import_decl.span,
                                                     specifiers: vec![],
                                                     src: Box::new(transformed_path),
                                                     type_only: false,
                                                     with: import_decl.with.clone(),
-                                                    phase: import_decl.phase.clone(),
+                                                    phase: import_decl.phase,
                                                 }),
                                             );
 
@@ -215,12 +212,12 @@ impl VisitMut for TransformVisitor {
                                     _ => {
                                         let new_node = ModuleItem::ModuleDecl(ModuleDecl::Import(
                                             ImportDecl {
-                                                span: import_decl.span.clone(),
+                                                span: import_decl.span,
                                                 specifiers: vec![spec.clone()],
                                                 src: import_decl.src.clone(),
                                                 type_only: import_decl.type_only,
                                                 with: import_decl.with.clone(),
-                                                phase: import_decl.phase.clone(),
+                                                phase: import_decl.phase,
                                             },
                                         ));
 
