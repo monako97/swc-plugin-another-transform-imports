@@ -1323,7 +1323,7 @@ checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
 
 [[package]]
 name = "swc-plugin-another-transform-imports"
-version = "1.9.0"
+version = "1.9.3"
 dependencies = [
  "lazy_static",
  "maplit",
@@ -1396,9 +1396,9 @@ dependencies = [
 
 [[package]]
 name = "swc_core"
-version = "5.0.4"
+version = "6.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "92086975747587872715a20f78fc51e7047bac58f3a6a17d4ed5a9643f3fd0a2"
+checksum = "c9ce5176f207d9c7640fde8283f984644cca9893fb8e571faab5f2b97d69968d"
 dependencies = [
  "once_cell",
  "swc_allocator",
