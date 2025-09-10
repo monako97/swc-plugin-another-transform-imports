@@ -1,39 +1,53 @@
-name: ci
-on: workflow_dispatch
+name: Publish
+
+on:
+  push:
+    branches:
+      - main
 
 jobs:
-  build-npm:
-    name: Build NPM Package
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+      - name: 'Setup nodejs'
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+          registry-url: 'https://registry.npmjs.org'
+      - name: 'Setup pnpm'
+        uses: pnpm/action-setup@v4
         with:
-          version: 8
-          run_install: false
-      - name: Get pnpm store directory
-        shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-      - name: Setup pnpm cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-      - name: Install Dependencies
-        run: pnpm install --no-frozen-lockfile
+          run_install: |
+            - recursive: false
       - name: Install Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
-      - name: Build
-        run: npm run prepublishOnly
-      - name: Publish
-        uses: JS-DevTools/npm-publish@v3
-        with:
-          token: ${{ secrets.NPM_TOKEN }}
+      - name: 'install'
+        run: pnpm install
+      - name: 'Publish to npm'
+        run: |
+          NPM_PACKAGE_NAME=$(node -p "require('./package.json').name")
+          NPM_PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          NPM_PACKAGE_BETA_TAG="beta"
+          NPM_PACKAGE_ALPHA_TAG="alpha"
+          NPM_PACKAGE_TAG="latest"
+          if [[ $NPM_PACKAGE_VERSION =~ $NPM_PACKAGE_BETA_TAG ]]; then
+              NPM_PACKAGE_TAG=$NPM_PACKAGE_BETA_TAG
+              echo "发布beta"
+          elif [[ $NPM_PACKAGE_VERSION =~ $NPM_PACKAGE_ALPHA_TAG ]]; then
+              NPM_PACKAGE_TAG=$NPM_PACKAGE_ALPHA_TAG
+              echo "发布alpha"
+          else
+              NPM_PACKAGE_TAG="latest"
+              echo "发布latest"
+          fi
+          if [[ $(npm view "${NPM_PACKAGE_NAME}" versions) != *"'${NPM_PACKAGE_VERSION}'"* ]]; then
+            npm publish --access public --tag ${NPM_PACKAGE_TAG}
+            echo "Successfully published version ${NPM_PACKAGE_VERSION} of ${NPM_PACKAGE_NAME} to GitLab's NPM registry: ${CI_PROJECT_URL}/-/packages"
+            curl -X PUT https://registry-direct.npmmirror.com/-/package/${NPM_PACKAGE_NAME}/syncs
+          else
+            echo "Version ${NPM_PACKAGE_VERSION} of ${NPM_PACKAGE_NAME} has already been published, so no new version has been published."
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
