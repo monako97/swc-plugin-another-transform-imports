@@ -1,13 +1,13 @@
-# swc-plugin-another-transform-imports
+# @moneko/transform-imports
 
 Another wasm plugin for swc, inspired from [babel-plugin-transform-imports](https://www.npmjs.com/package/babel-plugin-transform-imports).
 
 ## Installation
 
 ```bash
-npm install --save-dev swc-plugin-another-transform-imports
+npm install --save-dev @moneko/transform-imports
 # or
-yarn add -D swc-plugin-another-transform-imports
+yarn add -D @moneko/transform-imports
 ```
 
 ## Usage
@@ -20,7 +20,7 @@ It follows resolving rule of node.js, can be use in `.swcrc`，`webpack.config.j
     "experimental": {
       "plugins": [
         [
-          "swc-plugin-another-transform-imports",
+          "@moneko/transform-imports",
           {
             "antd": {
               "transform": "antd/lib/${member}",
