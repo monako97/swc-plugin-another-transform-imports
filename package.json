@@ -1,6 +1,6 @@
 {
     "name": "@moneko/transform-imports",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Another wasm swc transform imports plugin",
     "author": "Zhou Yeheng",
     "license": "MIT",
@@ -28,7 +28,7 @@
     },
     "main": "transform_imports.wasm",
     "scripts": {
-        "prepublishOnly": "cargo build --release --target wasm32-wasip1 && mv ./target/wasm32-wasip1/release/transform_imports.wasm ./transform_imports.wasm"
+        "prepublishOnly": "cargo build --release --target wasm32-wasip1 && rm -rf ./transform_imports.wasm && mv -f -u ./target/wasm32-wasip1/release/transform_imports.wasm ./transform_imports.wasm && node ./test.mjs"
     },
     "files": [
         "transform_imports.wasm"
@@ -41,5 +41,8 @@
         "onlyBuiltDependencies": [
             "esbuild"
         ]
+    },
+    "devDependencies": {
+        "@swc/core": "^1.13.5"
     }
 }

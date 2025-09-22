@@ -52,9 +52,9 @@ To:
 
 ```js
 import MyButton from "antd/lib/button";
+import "antd/lib/button/style";
 import BackTop from "antd/lib/back-top";
 import "antd/lib/back-top/style";
-import "antd/lib/button/style";
 import merge from "lodash/merge";
 ```
 
