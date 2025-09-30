@@ -1,6 +1,6 @@
 {
     "name": "@moneko/transform-imports",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "description": "Another wasm swc transform imports plugin",
     "author": "Zhou Yeheng",
     "license": "MIT",
@@ -43,6 +43,6 @@
         ]
     },
     "devDependencies": {
-        "@swc/core": "^1.13.19"
+        "@swc/core": "^1.13.5"
     }
 }
